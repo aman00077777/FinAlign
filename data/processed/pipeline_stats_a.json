@@ -1,0 +1,40 @@
+{
+  "raw_count": 39095,
+  "length_filter": {
+    "before": 39095,
+    "after": 37877,
+    "removed": 1218,
+    "pct_removed": 3.12,
+    "breakdown": {
+      "instruction_too_long": 876,
+      "response_too_long": 20,
+      "response_too_few_words": 148,
+      "response_too_short": 169,
+      "instruction_too_short": 5
+    }
+  },
+  "dedup": {
+    "before": 37877,
+    "exact_removed": 916,
+    "near_dup_removed": 707,
+    "after": 36254,
+    "pct_removed": 4.28
+  },
+  "pii_scrub": {
+    "total_replacements": 5181,
+    "by_type": {
+      "[EMAIL]": 39,
+      "[PHONE]": 744,
+      "[URL]": 4334,
+      "[USER]": 29,
+      "[ACCOUNT]": 35
+    }
+  },
+  "format": {
+    "before": 36254,
+    "off_topic_removed": 6641,
+    "after": 29613,
+    "pct_removed": 18.32
+  },
+  "final_count": 29613
+}
