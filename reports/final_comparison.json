@@ -1,0 +1,16 @@
+{
+  "sft": {
+    "responses": 5,
+    "average_words": 91.8,
+    "issues": 0
+  },
+  "dpo": {
+    "responses": 5,
+    "average_words": 97.8,
+    "issues": 0
+  },
+  "dpo_merged": {
+    "responses": 100,
+    "average_words": 103.1
+  }
+}
