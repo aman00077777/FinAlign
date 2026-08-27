@@ -27,6 +27,12 @@ from pathlib import Path
 from typing import Optional
 from collections import Counter, defaultdict
 
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+
+def _resolve_path(path_obj: str | Path) -> Path:
+    p = Path(path_obj)
+    return p if p.is_absolute() else PROJECT_ROOT / p
+
 # PART A -> Sharvari
 
 # A1. HuggingFace Data Loading 
@@ -41,6 +47,7 @@ def load_huggingface_data(cache_dir: str = "data/raw") -> list[dict]:
     """
     from datasets import load_dataset
 
+    cache_dir = str(_resolve_path(cache_dir))
     records = []
 
     # Source 1: PersonalFinance-Reddit-QA ???????????????????????????????
@@ -108,8 +115,8 @@ def load_huggingface_data(cache_dir: str = "data/raw") -> list[dict]:
 
     # Merge local dataset to ensure 5,000+ training pairs ─────────────────
     # Always merge local data on top of HF data for richer coverage
-    local_path = "data/finalign_cleaned_dataset.jsonl"
-    if Path(local_path).exists():
+    local_path = _resolve_path("data/finalign_cleaned_dataset.jsonl")
+    if local_path.exists():
         print(f"[Load] Merging local dataset: {local_path}")
         existing_instrs = {r["instruction"].strip().lower() for r in records}
         count = 0
@@ -382,6 +389,9 @@ def run_part_a_pipeline(
     Load -> Length filter -> Deduplicate -> PII scrub -> Format -> Save
     Returns (final_records, all_stats)
     """
+    output_path = _resolve_path(output_path)
+    raw_output_path = _resolve_path(raw_output_path)
+    stats_path = _resolve_path(stats_path)
     all_stats = {}
 
     # 1. Load
@@ -767,9 +777,10 @@ def run_part_b_pipeline(
     Run the complete Part B pipeline:
     Score -> Split -> Preference pairs -> Eval set -> Save all
     """
-    Path(f"{output_dir}/preference_pairs").mkdir(parents=True, exist_ok=True)
-    Path(f"{output_dir}/eval_set").mkdir(parents=True, exist_ok=True)
-    Path(f"{output_dir}/processed").mkdir(parents=True, exist_ok=True)
+    output_dir = _resolve_path(output_dir)
+    (output_dir / "preference_pairs").mkdir(parents=True, exist_ok=True)
+    (output_dir / "eval_set").mkdir(parents=True, exist_ok=True)
+    (output_dir / "processed").mkdir(parents=True, exist_ok=True)
 
     # 1. Split
     train, val, test, split_stats = stratified_split(clean_records, seed=seed)

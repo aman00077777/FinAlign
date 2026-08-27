@@ -1,0 +1,25 @@
+# FinAlign Project Dependencies
+
+# Core ML & Transformers
+transformers>=4.40.0
+torch>=2.1.0
+accelerate>=0.28.0
+datasets>=2.18.0
+sentencepiece>=0.2.0
+
+# Fine-Tuning & Alignment (QLoRA + DPO)
+peft>=0.10.0
+trl>=0.8.6
+bitsandbytes>=0.43.0
+
+# Web Demo & Serving
+gradio>=4.20.0
+requests>=2.31.0
+
+# Optional High-Throughput Inference / API Serving
+vllm>=0.4.0; platform_system != "Windows"
+
+# Utilities & Tracking
+wandb>=0.16.0
+tqdm>=4.66.0
+numpy>=1.26.0
