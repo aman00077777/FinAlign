@@ -5,7 +5,6 @@ __pycache__/
 
 # Large dataset caches / binaries (exceeds GitHub limits)
 *.arrow
-checkpoints/
 
 # Virtual environments
 .venv/
