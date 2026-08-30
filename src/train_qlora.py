@@ -83,6 +83,15 @@ def fmt(ex):
     prompt = f"{instr}\n\n{ctx}" if ctx else instr
     return {"text": TEMPLATE.format(instruction=prompt, output=out)}
 
+def get_attn_implementation():
+    if torch.cuda.is_available():
+        try:
+            import flash_attn  # noqa: F401
+            return "flash_attention_2"
+        except ImportError:
+            pass
+    return "sdpa"
+
 # ?? 3. Main ???????????????????????????????????????????????????????????????????
 
 def main():
@@ -103,10 +112,12 @@ def main():
     print(f"[Data] train={len(ds['train'])} | val={len(ds['validation'])}")
 
     # Model
+    attn_impl = get_attn_implementation()
+    print(f"[Model] Using attention implementation: {attn_impl}")
     model = AutoModelForCausalLM.from_pretrained(
         args.model_name, quantization_config=bnb_config(),
         device_map="auto", torch_dtype=torch.bfloat16,
-        attn_implementation="flash_attention_2",
+        attn_implementation=attn_impl,
     )
     model = prepare_model_for_kbit_training(model, use_gradient_checkpointing=True)
     model = get_peft_model(model, lora_config(args))

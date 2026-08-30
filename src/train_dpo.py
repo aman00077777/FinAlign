@@ -49,6 +49,15 @@ def bnb_config():
         bnb_4bit_use_double_quant=True,
     )
 
+def get_attn_implementation():
+    if torch.cuda.is_available():
+        try:
+            import flash_attn  # noqa: F401
+            return "flash_attention_2"
+        except ImportError:
+            pass
+    return "sdpa"
+
 def main():
     args = parse_args()
     set_seed(args.seed)
@@ -68,12 +77,15 @@ def main():
     }, split=None)
     print(f"[Data] train_pref={len(ds['train'])} | val_pref={len(ds['validation'])}")
 
+    attn_impl = get_attn_implementation()
+    print(f"[Model] Using attention implementation: {attn_impl}")
+
     # Policy model (trainable)
     bnb = bnb_config()
     base = AutoModelForCausalLM.from_pretrained(
         args.model_name, quantization_config=bnb,
         device_map="auto", torch_dtype=torch.bfloat16,
-        attn_implementation="flash_attention_2",
+        attn_implementation=attn_impl,
     )
     policy = PeftModel.from_pretrained(base, args.sft_adapter_path, is_trainable=True)
     policy = prepare_model_for_kbit_training(policy)
@@ -82,7 +94,7 @@ def main():
     base_ref = AutoModelForCausalLM.from_pretrained(
         args.model_name, quantization_config=bnb,
         device_map="auto", torch_dtype=torch.bfloat16,
-        attn_implementation="flash_attention_2",
+        attn_implementation=attn_impl,
     )
     ref = PeftModel.from_pretrained(base_ref, args.sft_adapter_path, is_trainable=False)
 

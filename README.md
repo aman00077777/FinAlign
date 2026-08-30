@@ -1,4 +1,4 @@
-﻿# FinAlign — Personal Finance Advisor LLM
+# FinAlign — Personal Finance Advisor LLM
 
 Fine-tuning **Mistral-7B-Instruct-v0.2** into a personal finance advisor
 using **QLoRA + DPO alignment** as a 5-person team project.
@@ -79,6 +79,19 @@ FinAlign/
 
 ---
 
+## Prerequisites & Setup
+
+### Git LFS (Required for Datasets)
+All dataset files (`*.jsonl`) are tracked via **Git LFS**. Ensure Git LFS is installed and pulled before running pipelines or training:
+
+```bash
+# Install Git LFS hooks and pull all dataset files
+git lfs install
+git lfs pull
+```
+
+---
+
 ## Quick Start
 
 ### 1. Run Data Pipeline
@@ -91,10 +104,9 @@ run_part_b_pipeline(records)
 "
 ```
 
-### 2. Install training deps (Colab A100)
+### 2. Install training deps (Colab A100 / Linux)
 ```bash
-pip install transformers>=4.40.0 peft>=0.10.0 trl>=0.8.6 \
-    bitsandbytes>=0.43.0 datasets accelerate flash-attn wandb
+pip install -r requirements.txt
 ```
 
 ### 3. SFT Fine-tuning
@@ -119,6 +131,18 @@ python src/train_dpo.py \
 ### 5. Export adapters
 ```bash
 python src/save_adapters.py export
+```
+
+### 6. Merge adapters for deployment
+```bash
+python src/save_adapters.py merge \
+    --dpo_adapter checkpoints/dpo_adapter \
+    --output_dir exports/finalign_v1_merged
+```
+
+### 7. Run Demo
+```bash
+python app.py
 ```
 
 ---

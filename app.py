@@ -56,20 +56,31 @@ def load_local_model(model_path: str, adapter_path: str = None):
     if LOCAL_MODEL is not None:
         return LOCAL_MODEL, LOCAL_TOKENIZER
 
+    merged_exists = os.path.exists(model_path)
+    adapter_exists = bool(adapter_path and os.path.exists(adapter_path))
+
+    if not merged_exists and not adapter_exists:
+        raise FileNotFoundError(
+            f"Neither merged model ('{model_path}') nor adapter checkpoint ('{adapter_path}') was found.\n"
+            f"To serve locally, first merge the trained adapters using:\n"
+            f"  python src/save_adapters.py merge --dpo_adapter checkpoints/dpo_adapter --output_dir exports/finalign_v1_merged\n"
+            f"Or select an API backend (Ollama API / vLLM API) under Advanced Settings."
+        )
+
     from transformers import AutoTokenizer, AutoModelForCausalLM
-    print(f"[Loading] Local model from: {model_path}")
+    print(f"[Loading] Local model from: {model_path if merged_exists else DEFAULT_BASE_MODEL}")
     
     device = "cuda" if torch.cuda.is_available() else "cpu"
     dtype = torch.float16 if torch.cuda.is_available() else torch.float32
 
     tokenizer = AutoTokenizer.from_pretrained(
-        model_path if os.path.exists(model_path) else DEFAULT_BASE_MODEL,
+        model_path if merged_exists else DEFAULT_BASE_MODEL,
         trust_remote_code=True
     )
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
 
-    if os.path.exists(model_path):
+    if merged_exists:
         model = AutoModelForCausalLM.from_pretrained(
             model_path,
             torch_dtype=dtype,
@@ -83,10 +94,7 @@ def load_local_model(model_path: str, adapter_path: str = None):
             torch_dtype=dtype,
             device_map="auto" if device == "cuda" else None,
         )
-        if adapter_path and os.path.exists(adapter_path):
-            model = PeftModel.from_pretrained(base, adapter_path)
-        else:
-            model = base
+        model = PeftModel.from_pretrained(base, adapter_path)
 
     model.eval()
     LOCAL_MODEL = model
@@ -137,7 +145,10 @@ def generate_response(
     if not user_question.strip():
         return "Please enter a personal finance question."
 
-    formatted_prompt = f"<s>[INST] {user_question.strip()} [/INST]"
+    if system_prompt and system_prompt.strip():
+        formatted_prompt = f"<s>[INST] {system_prompt.strip()}\n\n{user_question.strip()} [/INST]"
+    else:
+        formatted_prompt = f"<s>[INST] {user_question.strip()} [/INST]"
 
     start_time = time.time()
     try:
