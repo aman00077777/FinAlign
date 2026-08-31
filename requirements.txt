@@ -1,19 +1,19 @@
 # FinAlign Project Dependencies
 
 # Core ML & Transformers
-transformers>=4.40.0,<4.45.0
-torch>=2.1.0
-accelerate>=0.28.0
-datasets>=2.18.0
+transformers>=4.44.0
+torch>=2.2.0
+accelerate>=0.30.0
+datasets>=2.20.0
 sentencepiece>=0.2.0
 
 # Fine-Tuning & Alignment (QLoRA + DPO)
-peft>=0.10.0,<0.12.0
-trl>=0.8.6,<0.10.0
+peft>=0.12.0
+trl>=0.12.0
 bitsandbytes>=0.43.0
 
 # Web Demo & Serving
-gradio>=4.20.0
+gradio>=4.40.0
 requests>=2.31.0
 
 # Optional High-Throughput Inference & Attention Acceleration
@@ -21,6 +21,8 @@ vllm>=0.4.0; platform_system != "Windows"
 flash-attn>=2.5.8; platform_system != "Windows"
 
 # Utilities & Tracking
-wandb>=0.16.0
+wandb>=0.17.0
 tqdm>=4.66.0
-numpy>=1.26.0
+numpy>=1.26.0,<2.0.0
+scipy>=1.11.0
+
