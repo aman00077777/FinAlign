@@ -43,9 +43,11 @@ def parse_args():
     return p.parse_args()
 
 def bnb_config():
+    is_bf16 = torch.cuda.is_available() and torch.cuda.is_bf16_supported()
+    compute_dtype = torch.bfloat16 if is_bf16 else torch.float16
     return BitsAndBytesConfig(
         load_in_4bit=True, bnb_4bit_quant_type="nf4",
-        bnb_4bit_compute_dtype=torch.bfloat16,
+        bnb_4bit_compute_dtype=compute_dtype,
         bnb_4bit_use_double_quant=True,
     )
 
@@ -116,7 +118,7 @@ def main():
         optim="paged_adamw_32bit",
         learning_rate=args.lr, weight_decay=0.001, max_grad_norm=1.0,
         lr_scheduler_type="cosine", warmup_ratio=0.1,
-        bf16=True, tf32=True, fp16=False,
+        fp16=not is_bf16, bf16=is_bf16,
         max_length=args.max_length, max_prompt_length=args.max_prompt_length,
         eval_strategy="epoch", save_strategy="epoch",
         save_total_limit=1, load_best_model_at_end=True,
