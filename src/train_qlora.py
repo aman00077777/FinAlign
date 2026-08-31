@@ -128,6 +128,9 @@ def main():
     )
     model = prepare_model_for_kbit_training(model, use_gradient_checkpointing=True)
     model = get_peft_model(model, lora_config(args))
+    for param in model.parameters():
+        if param.requires_grad:
+            param.data = param.data.to(torch.float32)
     model.print_trainable_parameters()
 
     tokenizer = AutoTokenizer.from_pretrained(args.model_name, padding_side="right")

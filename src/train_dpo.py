@@ -86,18 +86,24 @@ def main():
 
     # Policy model (trainable)
     bnb = bnb_config()
+    is_bf16 = torch.cuda.is_available() and torch.cuda.is_bf16_supported()
+    compute_dtype = torch.bfloat16 if is_bf16 else torch.float16
+
     base = AutoModelForCausalLM.from_pretrained(
         args.model_name, quantization_config=bnb,
-        device_map="auto", dtype=torch.bfloat16,
+        device_map="auto", dtype=compute_dtype,
         attn_implementation=attn_impl,
     )
     policy = PeftModel.from_pretrained(base, args.sft_adapter_path, is_trainable=True)
     policy = prepare_model_for_kbit_training(policy)
+    for param in policy.parameters():
+        if param.requires_grad:
+            param.data = param.data.to(torch.float32)
 
     # Reference model (frozen SFT)
     base_ref = AutoModelForCausalLM.from_pretrained(
         args.model_name, quantization_config=bnb,
-        device_map="auto", dtype=torch.bfloat16,
+        device_map="auto", dtype=compute_dtype,
         attn_implementation=attn_impl,
     )
     ref = PeftModel.from_pretrained(base_ref, args.sft_adapter_path, is_trainable=False)
