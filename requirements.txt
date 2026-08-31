@@ -18,7 +18,6 @@ requests>=2.31.0
 
 # Optional High-Throughput Inference & Attention Acceleration
 vllm>=0.4.0; platform_system != "Windows"
-flash-attn>=2.5.8; platform_system != "Windows"
 
 # Utilities & Tracking
 wandb>=0.17.0
