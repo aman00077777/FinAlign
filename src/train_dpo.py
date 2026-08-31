@@ -27,12 +27,12 @@ def parse_args():
     p.add_argument("--train_pref_file",  default="data/preference_pairs/train_pref.jsonl")
     p.add_argument("--val_pref_file",    default="data/preference_pairs/val_pref.jsonl")
     p.add_argument("--output_dir",       default="checkpoints/dpo_adapter")
-    p.add_argument("--model_name",       default="mistralai/Mistral-7B-Instruct-v0.2")
+    p.add_argument("--model_name",       default="Qwen/Qwen2.5-3B-Instruct")
     p.add_argument("--beta",      type=float, default=0.1)
     p.add_argument("--loss_type",         default="sigmoid")
     p.add_argument("--num_epochs",type=int,   default=1)
     p.add_argument("--batch",     type=int,   default=2)
-    p.add_argument("--grad_accum",type=int,   default=8)
+    p.add_argument("--grad_accum",type=int,   default=4)
     p.add_argument("--lr",        type=float, default=5e-5)
     p.add_argument("--max_length",       type=int, default=1024)
     p.add_argument("--max_prompt_length",type=int, default=512)
@@ -65,9 +65,9 @@ def main():
     if not args.no_wandb:
         wandb.init(
             project=args.wandb_project,
-            name=args.wandb_run or f"dpo-beta{args.beta}-lr{args.lr}",
+            name=args.wandb_run or f"dpo-qwen3b-beta{args.beta}-lr{args.lr}",
             config=vars(args),
-            tags=["dpo","mistral-7b","personal-finance","alignment"],
+            tags=["dpo","qwen2.5-3b","personal-finance","alignment"],
         )
 
     # Data ? expects: prompt, chosen, rejected

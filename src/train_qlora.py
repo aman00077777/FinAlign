@@ -2,9 +2,9 @@
 src/train_qlora.py
 ==================
 QLoRA Supervised Fine-Tuning (SFT) for FinAlign
-Model  : mistralai/Mistral-7B-Instruct-v0.2
+Model  : Qwen/Qwen2.5-3B-Instruct
 Method : 4-bit NF4 QLoRA + PEFT LoRA
-GPU    : A100 40 GB (single GPU) ? Colab recommended
+GPU    : Colab T4 (16 GB) / A10G / A100
 Tracker: Weights & Biases
 Output : checkpoints/sft_adapter/
 
@@ -27,17 +27,17 @@ from peft import LoraConfig, TaskType, get_peft_model, prepare_model_for_kbit_tr
 from trl import SFTTrainer, SFTConfig
 import wandb
 
-# ?? 0. Args ??????????????????????????????????????????????????????????????????
+# ── 0. Args ──────────────────────────────────────────────────────────────────
 
 def parse_args():
     p = argparse.ArgumentParser()
     p.add_argument("--train_file",  default="data/processed/train.jsonl")
     p.add_argument("--val_file",    default="data/processed/val.jsonl")
     p.add_argument("--output_dir",  default="checkpoints/sft_adapter")
-    p.add_argument("--model_name",  default="mistralai/Mistral-7B-Instruct-v0.2")
-    p.add_argument("--max_seq_len", type=int,   default=2048)
-    p.add_argument("--lora_r",      type=int,   default=64)
-    p.add_argument("--lora_alpha",  type=int,   default=128)
+    p.add_argument("--model_name",  default="Qwen/Qwen2.5-3B-Instruct")
+    p.add_argument("--max_seq_len", type=int,   default=1024)
+    p.add_argument("--lora_r",      type=int,   default=32)
+    p.add_argument("--lora_alpha",  type=int,   default=64)
     p.add_argument("--lora_dropout",type=float, default=0.05)
     p.add_argument("--num_epochs",  type=int,   default=3)
     p.add_argument("--batch",       type=int,   default=4)
@@ -51,7 +51,7 @@ def parse_args():
     p.add_argument("--seed",        type=int,   default=42)
     return p.parse_args()
 
-# ?? 1. Configs ????????????????????????????????????????????????????????????????
+# ── 1. Configs ────────────────────────────────────────────────────────────────
 
 def bnb_config():
     return BitsAndBytesConfig(
@@ -72,9 +72,9 @@ def lora_config(args):
         inference_mode=False,
     )
 
-# ?? 2. Formatter ??????????????????????????????????????????????????????????????
+# ── 2. Formatter ──────────────────────────────────────────────────────────────
 
-TEMPLATE = "<s>[INST] {instruction} [/INST] {output}</s>"
+TEMPLATE = "<|im_start|>user\n{instruction}<|im_end|>\n<|im_start|>assistant\n{output}<|im_end|>"
 
 def fmt(ex):
     instr = ex.get("instruction","").strip()
@@ -92,7 +92,7 @@ def get_attn_implementation():
             pass
     return "sdpa"
 
-# ?? 3. Main ???????????????????????????????????????????????????????????????????
+# ── 3. Main ───────────────────────────────────────────────────────────────────
 
 def main():
     args = parse_args()
@@ -101,9 +101,9 @@ def main():
     if not args.no_wandb:
         wandb.init(
             project=args.wandb_project,
-            name=args.wandb_run or f"sft-r{args.lora_r}-lr{args.lr}",
+            name=args.wandb_run or f"sft-qwen3b-r{args.lora_r}-lr{args.lr}",
             config=vars(args),
-            tags=["sft","qlora","mistral-7b","personal-finance"],
+            tags=["sft","qlora","qwen2.5-3b","personal-finance"],
         )
 
     # Data

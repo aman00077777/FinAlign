@@ -1,7 +1,7 @@
 """
 app.py — FinAlign Personal Finance Advisor Gradio Demo
 ======================================================
-Interactive Web Interface for FinAlign (Mistral-7B + QLoRA SFT + DPO Alignment).
+Interactive Web Interface for FinAlign (Qwen2.5-3B + QLoRA SFT + DPO Alignment).
 
 Supports two backend modes:
 1. Local Transformers / PEFT mode (loads model/adapter on GPU/CPU)
@@ -27,7 +27,7 @@ except ImportError:
 # Default paths and API endpoints
 DEFAULT_MODEL_PATH = "exports/finalign_v1_merged"
 DEFAULT_ADAPTER_PATH = "checkpoints/dpo_adapter"
-DEFAULT_BASE_MODEL = "mistralai/Mistral-7B-Instruct-v0.2"
+DEFAULT_BASE_MODEL = "Qwen/Qwen2.5-3B-Instruct"
 DEFAULT_OLLAMA_URL = "http://localhost:11434/api/generate"
 DEFAULT_VLLM_URL = "http://localhost:8000/v1/chat/completions"
 
@@ -145,11 +145,6 @@ def generate_response(
     if not user_question.strip():
         return "Please enter a personal finance question."
 
-    if system_prompt and system_prompt.strip():
-        formatted_prompt = f"<s>[INST] {system_prompt.strip()}\n\n{user_question.strip()} [/INST]"
-    else:
-        formatted_prompt = f"<s>[INST] {user_question.strip()} [/INST]"
-
     start_time = time.time()
     try:
         if backend_mode == "Ollama API":
@@ -162,6 +157,17 @@ def generate_response(
 
         else: # Local Transformers
             model, tokenizer = load_local_model(DEFAULT_MODEL_PATH, DEFAULT_ADAPTER_PATH)
+
+            messages = []
+            if system_prompt and system_prompt.strip():
+                messages.append({"role": "system", "content": system_prompt.strip()})
+            messages.append({"role": "user", "content": user_question.strip()})
+
+            if hasattr(tokenizer, "apply_chat_template") and tokenizer.chat_template:
+                formatted_prompt = tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
+            else:
+                formatted_prompt = f"<|im_start|>user\n{user_question.strip()}<|im_end|>\n<|im_start|>assistant\n"
+
             inputs = tokenizer(formatted_prompt, return_tensors="pt")
             if torch.cuda.is_available():
                 inputs = {k: v.to("cuda") for k, v in inputs.items()}
@@ -197,7 +203,7 @@ def build_ui():
         gr.Markdown(
             """
             # 💰 FinAlign — Personal Finance AI Advisor
-            ### Fine-Tuned Mistral-7B with QLoRA & DPO Preference Alignment
+            ### Fine-Tuned Qwen2.5-3B with QLoRA & DPO Preference Alignment
             """,
             elem_classes=["main-title"]
         )

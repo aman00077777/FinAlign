@@ -1,7 +1,7 @@
 # FinAlign — Personal Finance Advisor LLM
 
-Fine-tuning **Mistral-7B-Instruct-v0.2** into a personal finance advisor
-using **QLoRA + DPO alignment** as a 5-person team project.
+Fine-tuning **Qwen/Qwen2.5-3B-Instruct** into a personal finance advisor
+using **QLoRA + DPO alignment** as a 5-person team project (optimized for Colab T4 / A10G / A100).
 
 > Domain: budgeting, saving, investing, debt management, credit, retirement planning.
 
@@ -30,21 +30,22 @@ FinAlign/
 │   │   ├── val.jsonl               # 10% split
 │   │   └── test.jsonl              # 10% split
 │   ├── preference_pairs/           # DPO training data
-│   │   ├── train_pref.jsonl        # 400 chosen/rejected pairs
-│   │   └── val_pref.jsonl          # 100 chosen/rejected pairs
+│   │   ├── train_pref.jsonl        # 400 chosen/rejected pairs (ChatML)
+│   │   └── val_pref.jsonl          # 100 chosen/rejected pairs (ChatML)
 │   ├── eval_set/
 │   │   └── benchmark_100q.jsonl    # 100 held-out eval questions
 │   └── data_stats_report.md
 │
 ├── notebooks/
 │   ├── 01_dataset_prep.ipynb       # Parts A + B, runnable top-to-bottom
-│   ├── 02_qlora_finetune.ipynb     # QLoRA SFT (Aman)
-│   └── 03_dpo_alignment.ipynb      # DPO alignment (Aman)
+│   ├── 02_qlora_finetune.ipynb     # QLoRA SFT on Qwen2.5-3B (Aman)
+│   ├── 03_dpo_alignment.ipynb      # DPO alignment on Qwen2.5-3B (Aman)
+│   └── 04-evaluation.ipynb         # Model evaluation & benchmarking
 │
 ├── src/
 │   ├── data_pipeline.py            # Full pipeline: A+B functions
-│   ├── train_qlora.py              # SFT CLI script
-│   ├── train_dpo.py                # DPO CLI script
+│   ├── train_qlora.py              # SFT CLI script (Qwen2.5-3B)
+│   ├── train_dpo.py                # DPO CLI script (Qwen2.5-3B)
 │   └── save_adapters.py            # Export + merge adapters
 │
 └── reports/
@@ -104,7 +105,7 @@ run_part_b_pipeline(records)
 "
 ```
 
-### 2. Install training deps (Colab A100 / Linux)
+### 2. Install training deps (Colab T4 / A100 / Linux)
 ```bash
 pip install -r requirements.txt
 ```
@@ -112,6 +113,7 @@ pip install -r requirements.txt
 ### 3. SFT Fine-tuning
 ```bash
 python src/train_qlora.py \
+    --model_name "Qwen/Qwen2.5-3B-Instruct" \
     --train_file data/processed/train.jsonl \
     --val_file   data/processed/val.jsonl \
     --output_dir checkpoints/sft_adapter \
@@ -121,6 +123,7 @@ python src/train_qlora.py \
 ### 4. DPO Alignment
 ```bash
 python src/train_dpo.py \
+    --model_name "Qwen/Qwen2.5-3B-Instruct" \
     --sft_adapter_path checkpoints/sft_adapter \
     --train_pref_file  data/preference_pairs/train_pref.jsonl \
     --val_pref_file    data/preference_pairs/val_pref.jsonl \
@@ -157,9 +160,9 @@ python app.py
 **Preference pairs** (`data/preference_pairs/train_pref.jsonl`):
 ```json
 {
-  "prompt":   "<s>[INST] Should I invest my emergency fund in crypto? [/INST]",
-  "chosen":   " No — an emergency fund should be liquid and stable...",
-  "rejected": " This strategy is virtually guaranteed to work for everyone.",
+  "prompt":   "<|im_start|>user\nShould I invest my emergency fund in crypto?<|im_end|>\n<|im_start|>assistant\n",
+  "chosen":   "No — an emergency fund should be liquid and stable...<|im_end|>",
+  "rejected": "This strategy is virtually guaranteed to work for everyone.<|im_end|>",
   "topic":    "saving"
 }
 ```
@@ -171,21 +174,24 @@ python app.py
 
 ---
 
-## Hyperparameters
+## Hyperparameters (Colab T4 Friendly)
 
 ### SFT (QLoRA)
 | Parameter | Value |
 |---|---|
-| LoRA r / alpha | 64 / 128 |
-| Effective batch | 16 |
+| Base Model | `Qwen/Qwen2.5-3B-Instruct` |
+| LoRA r / alpha | 32 / 64 |
+| Per device batch / Grad accum | 4 / 4 (Effective = 16) |
 | LR | 2e-4 (cosine) |
 | Epochs | 3 (early stop) |
-| Max seq len | 2048 (packed) |
+| Max seq len | 1024 (packed) |
 
 ### DPO
 | Parameter | Value |
 |---|---|
+| Base Model | `Qwen/Qwen2.5-3B-Instruct` |
 | Beta | 0.1 |
+| Per device batch / Grad accum | 2 / 4 (Effective = 8) |
 | LR | 5e-5 |
 | Epochs | 1 |
-| Preference pairs | 500 |
+| Preference pairs | 500 (ChatML formatted) |

@@ -644,9 +644,9 @@ def generate_preference_pairs(
 
     Format per pair:
     {
-      "prompt":   "<s>[INST] {instruction} [/INST]",
-      "chosen":   " {high_quality_response}",
-      "rejected": " {degraded_response}",
+      "prompt":   "<|im_start|>user\n{instruction}<|im_end|>\n<|im_start|>assistant\n",
+      "chosen":   "{high_quality_response}<|im_end|>",
+      "rejected": "{degraded_response}<|im_end|>",
       "topic":    "{topic}"
     }
     """
@@ -689,16 +689,16 @@ def generate_preference_pairs(
                 rejected = "I'm not sure about the specifics, but generally speaking, " + chosen[:200] + "..."
 
             pairs.append({
-                "prompt":   f"<s>[INST] {instr} [/INST]",
-                "chosen":   " " + chosen,
-                "rejected": " " + rejected,
+                "prompt":   f"<|im_start|>user\n{instr}<|im_end|>\n<|im_start|>assistant\n",
+                "chosen":   f"{chosen}<|im_end|>",
+                "rejected": f"{rejected}<|im_end|>",
                 "topic":    topic,
             })
 
     # If total pairs < n_pairs due to small topic pools, fill deficit from remaining train records
     if len(pairs) < n_pairs:
         used_instrs = {p["prompt"] for p in pairs}
-        remaining_pool = [r for r in train_records if f"<s>[INST] {r['instruction'].strip()} [/INST]" not in used_instrs]
+        remaining_pool = [r for r in train_records if f"<|im_start|>user\n{r['instruction'].strip()}<|im_end|>\n<|im_start|>assistant\n" not in used_instrs]
         rng.shuffle(remaining_pool)
         needed = n_pairs - len(pairs)
         for record in remaining_pool[:needed]:
@@ -708,9 +708,9 @@ def generate_preference_pairs(
             if not rejected or rejected == chosen:
                 rejected = "I'm not sure about the specifics, but generally speaking, " + chosen[:200] + "..."
             pairs.append({
-                "prompt": f"<s>[INST] {instr} [/INST]",
-                "chosen": " " + chosen,
-                "rejected": " " + rejected,
+                "prompt": f"<|im_start|>user\n{instr}<|im_end|>\n<|im_start|>assistant\n",
+                "chosen": f"{chosen}<|im_end|>",
+                "rejected": f"{rejected}<|im_end|>",
                 "topic": record.get("_topic", assign_topic(record)),
             })
 
