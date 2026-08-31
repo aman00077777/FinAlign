@@ -131,37 +131,40 @@ def main():
 
     # Training args
     ta = SFTConfig(
-        output_dir=args.output_dir, overwrite_output_dir=True,
+        output_dir=args.output_dir,
         num_train_epochs=args.num_epochs,
         per_device_train_batch_size=args.batch,
         per_device_eval_batch_size=args.batch,
         gradient_accumulation_steps=args.grad_accum,
         gradient_checkpointing=True,
-        gradient_checkpointing_kwargs={"use_reentrant": False},
         optim="paged_adamw_32bit",
         learning_rate=args.lr,
-        weight_decay=0.001, max_grad_norm=0.3,
+        weight_decay=0.001,
+        max_grad_norm=0.3,
         lr_scheduler_type="cosine",
-        warmup_ratio=args.warmup,
-        bf16=True, tf32=True, fp16=False,
-        eval_strategy="epoch", save_strategy="epoch",
+        bf16=True,
+        eval_strategy="epoch",
+        save_strategy="epoch",
         load_best_model_at_end=True,
-        metric_for_best_model="eval_loss", greater_is_better=False,
+        metric_for_best_model="eval_loss",
+        greater_is_better=False,
         save_total_limit=2,
-        max_seq_length=args.max_seq_len, packing=True,
         report_to="none" if args.no_wandb else "wandb",
         run_name=args.wandb_run,
         seed=args.seed,
-        dataloader_num_workers=4, group_by_length=True,
-        logging_steps=10, logging_first_step=True,
+        logging_steps=10,
+        dataset_text_field="text",
+        max_length=args.max_seq_len,
+        packing=False,
     )
 
     trainer = SFTTrainer(
-        model=model, tokenizer=tokenizer,
-        train_dataset=ds["train"], eval_dataset=ds["validation"],
+        model=model,
+        processing_class=tokenizer,
+        train_dataset=ds["train"],
+        eval_dataset=ds["validation"],
         args=ta,
         callbacks=[EarlyStoppingCallback(early_stopping_patience=args.patience, early_stopping_threshold=1e-4)],
-        dataset_text_field="text",
     )
 
     print("[Train] Starting QLoRA SFT ...")

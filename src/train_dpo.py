@@ -105,7 +105,7 @@ def main():
         tokenizer.pad_token = tokenizer.eos_token
 
     dpo_cfg = DPOConfig(
-        output_dir=args.output_dir, overwrite_output_dir=True,
+        output_dir=args.output_dir,
         beta=args.beta, loss_type=args.loss_type,
         num_train_epochs=args.num_epochs,
         per_device_train_batch_size=args.batch,
@@ -133,7 +133,7 @@ def main():
     trainer = DPOTrainer(
         model=policy, ref_model=ref, args=dpo_cfg,
         train_dataset=ds["train"], eval_dataset=ds["validation"],
-        tokenizer=tokenizer,
+        processing_class=tokenizer,
     )
 
     print("[Train] Starting DPO alignment ...")
