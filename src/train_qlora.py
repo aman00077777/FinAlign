@@ -85,11 +85,13 @@ def fmt(ex):
 
 def get_attn_implementation():
     if torch.cuda.is_available():
-        try:
-            import flash_attn  # noqa: F401
-            return "flash_attention_2"
-        except ImportError:
-            pass
+        major, _ = torch.cuda.get_device_capability()
+        if major >= 8:  # Ampere, Ada, Hopper (A100, A10, RTX 3090/4090)
+            try:
+                import flash_attn  # noqa: F401
+                return "flash_attention_2"
+            except ImportError:
+                pass
     return "sdpa"
 
 # ── 3. Main ───────────────────────────────────────────────────────────────────
@@ -116,7 +118,7 @@ def main():
     print(f"[Model] Using attention implementation: {attn_impl}")
     model = AutoModelForCausalLM.from_pretrained(
         args.model_name, quantization_config=bnb_config(),
-        device_map="auto", torch_dtype=torch.bfloat16,
+        device_map="auto", dtype=torch.bfloat16,
         attn_implementation=attn_impl,
     )
     model = prepare_model_for_kbit_training(model, use_gradient_checkpointing=True)

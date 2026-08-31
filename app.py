@@ -83,7 +83,7 @@ def load_local_model(model_path: str, adapter_path: str = None):
     if merged_exists:
         model = AutoModelForCausalLM.from_pretrained(
             model_path,
-            torch_dtype=dtype,
+            dtype=dtype,
             device_map="auto" if device == "cuda" else None,
         )
     else:
@@ -91,7 +91,7 @@ def load_local_model(model_path: str, adapter_path: str = None):
         from peft import PeftModel
         base = AutoModelForCausalLM.from_pretrained(
             DEFAULT_BASE_MODEL,
-            torch_dtype=dtype,
+            dtype=dtype,
             device_map="auto" if device == "cuda" else None,
         )
         model = PeftModel.from_pretrained(base, adapter_path)

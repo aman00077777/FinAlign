@@ -50,7 +50,7 @@ def ask(q):
 
 def merge_cmd(args):
     os.makedirs(args.output_dir, exist_ok=True)
-    base = AutoModelForCausalLM.from_pretrained(BASE, torch_dtype=torch.bfloat16, device_map="auto")
+    base = AutoModelForCausalLM.from_pretrained(BASE, dtype=torch.bfloat16, device_map="auto")
     model = PeftModel.from_pretrained(base, args.dpo_adapter)
     model = model.merge_and_unload()
     model.save_pretrained(args.output_dir, safe_serialization=True)

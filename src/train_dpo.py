@@ -51,11 +51,13 @@ def bnb_config():
 
 def get_attn_implementation():
     if torch.cuda.is_available():
-        try:
-            import flash_attn  # noqa: F401
-            return "flash_attention_2"
-        except ImportError:
-            pass
+        major, _ = torch.cuda.get_device_capability()
+        if major >= 8:  # Ampere, Ada, Hopper
+            try:
+                import flash_attn  # noqa: F401
+                return "flash_attention_2"
+            except ImportError:
+                pass
     return "sdpa"
 
 def main():
@@ -84,7 +86,7 @@ def main():
     bnb = bnb_config()
     base = AutoModelForCausalLM.from_pretrained(
         args.model_name, quantization_config=bnb,
-        device_map="auto", torch_dtype=torch.bfloat16,
+        device_map="auto", dtype=torch.bfloat16,
         attn_implementation=attn_impl,
     )
     policy = PeftModel.from_pretrained(base, args.sft_adapter_path, is_trainable=True)
@@ -93,7 +95,7 @@ def main():
     # Reference model (frozen SFT)
     base_ref = AutoModelForCausalLM.from_pretrained(
         args.model_name, quantization_config=bnb,
-        device_map="auto", torch_dtype=torch.bfloat16,
+        device_map="auto", dtype=torch.bfloat16,
         attn_implementation=attn_impl,
     )
     ref = PeftModel.from_pretrained(base_ref, args.sft_adapter_path, is_trainable=False)
